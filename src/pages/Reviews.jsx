@@ -1,15 +1,9 @@
 import { useState } from 'react'
 import { Search, Plus, Edit2, Trash2, X, Star, MessageSquare, Check, Shield, ShieldOff, Filter } from 'lucide-react'
-import { propertyReviews, allProperties } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState(() => {
-    const initial = {}
-    Object.keys(propertyReviews).forEach(k => {
-      initial[k] = propertyReviews[k].map(r => ({ ...r }))
-    })
-    return initial
-  })
+  const { reviews, properties, addReview, updateReview, deleteReview } = useData()
   const [search, setSearch] = useState('')
   const [propertyFilter, setPropertyFilter] = useState('all')
   const [showModal, setShowModal] = useState(false)
@@ -23,7 +17,7 @@ export default function Reviews() {
   )
 
   const filtered = allReviews.filter(r => {
-    const prop = allProperties.find(p => p.id === r.propertyId)
+    const prop = properties.find(p => p.id === r.propertyId)
     const propTitle = prop?.title || ''
     if (search && !r.userName.toLowerCase().includes(search.toLowerCase()) && !r.comment.toLowerCase().includes(search.toLowerCase()) && !propTitle.toLowerCase().includes(search.toLowerCase())) return false
     if (propertyFilter !== 'all' && r.propertyId !== Number(propertyFilter)) return false
@@ -46,65 +40,31 @@ export default function Reviews() {
     if (!form.propertyId || !form.userName || !form.comment) return
     const propId = Number(form.propertyId)
     if (editing) {
-      setReviews(prev => {
-        const next = { ...prev }
-        Object.keys(next).forEach(k => {
-          next[k] = next[k].map(r => r.id === editing ? { ...r, ...form, propertyId: propId, rating: Number(form.rating) } : r)
-        })
-        return next
-      })
+      updateReview(editing, { ...form, propertyId: propId, rating: Number(form.rating) })
     } else {
-      const newReview = {
-        id: Date.now(),
+      addReview({
         propertyId: propId,
         userName: form.userName,
         rating: Number(form.rating),
         comment: form.comment,
         verified: form.verified,
         date: form.date,
-      }
-      setReviews(prev => {
-        const next = { ...prev }
-        if (next[propId]) {
-          next[propId] = [...next[propId], newReview]
-        } else {
-          next[propId] = [newReview]
-        }
-        return next
       })
     }
     setShowModal(false)
   }
 
-  const handleDelete = () => {
-    setReviews(prev => {
-      const next = { ...prev }
-      Object.keys(next).forEach(k => {
-        next[k] = next[k].filter(r => r.id !== showDelete)
-        if (next[k].length === 0) delete next[k]
-      })
-      return next
-    })
-    setShowDelete(null)
-  }
+  const handleDelete = () => { deleteReview(showDelete); setShowDelete(null) }
 
-  const toggleVerified = (r) => {
-    setReviews(prev => {
-      const next = { ...prev }
-      Object.keys(next).forEach(k => {
-        next[k] = next[k].map(rv => rv.id === r.id ? { ...rv, verified: !rv.verified } : rv)
-      })
-      return next
-    })
-  }
+  const toggleVerified = (r) => { updateReview(r.id, { verified: !r.verified }) }
 
   const getPropertyTitle = (propId) => {
-    const prop = allProperties.find(p => p.id === propId)
+    const prop = properties.find(p => p.id === propId)
     return prop ? prop.title : `Property #${propId}`
   }
 
   const getPropertyPreview = (propId) => {
-    const prop = allProperties.find(p => p.id === propId)
+    const prop = properties.find(p => p.id === propId)
     return prop?.images?.[0] || null
   }
 
@@ -195,7 +155,7 @@ export default function Reviews() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Property *</label>
                 <select value={form.propertyId} onChange={e => setForm({ ...form, propertyId: e.target.value })} className="input-field">
                   <option value="">Select property...</option>
-                  {allProperties.map(p => (
+                  {properties.map(p => (
                     <option key={p.id} value={p.id}>{p.title}</option>
                   ))}
                 </select>

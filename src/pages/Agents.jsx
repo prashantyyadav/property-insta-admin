@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, Plus, Edit2, Trash2, Eye, X, AlertTriangle, Star, Phone, Mail } from 'lucide-react'
-import { agentsData } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 8
 
@@ -9,7 +9,7 @@ function Badge({ children, className }) {
 }
 
 export default function Agents() {
-  const [agents, setAgents] = useState(agentsData)
+  const { agents, addAgent, updateAgent, deleteAgent } = useData()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
@@ -31,16 +31,16 @@ export default function Agents() {
 
   const handleSave = () => {
     if (!form.name || !form.email || !form.phone) return
+    const payload = { ...form, rating: Number(form.rating), sales: Number(form.sales), specialization: form.specialization.split(',').map(t => t.trim()).filter(Boolean) }
     if (editing) {
-      setAgents(agents.map(a => a.id===editing ? {...a, ...form, rating:Number(form.rating), sales:Number(form.sales), specialization:form.specialization.split(',').map(t=>t.trim()).filter(Boolean)} : a))
+      updateAgent(editing, payload)
     } else {
-      const newId = 'agent' + (Math.max(...agents.map(a=>parseInt(a.id.replace('agent',''))),0)+1)
-      setAgents([...agents, { id:newId, ...form, rating:Number(form.rating), sales:Number(form.sales), specialization:form.specialization.split(',').map(t=>t.trim()).filter(Boolean) }])
+      addAgent(payload)
     }
     setShowModal(false)
   }
 
-  const handleDelete = () => { setAgents(agents.filter(a=>a.id!==showDelete)); setShowDelete(null) }
+  const handleDelete = () => { deleteAgent(showDelete); setShowDelete(null) }
 
   return (
     <div className="space-y-6">

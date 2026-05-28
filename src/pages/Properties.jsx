@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { Search, Filter, Plus, Edit2, Trash2, Eye, X, MapPin, Bed, Bath, Square, Home, Check, AlertTriangle, Star, Flame, Shield, Calendar, Car, Compass, DollarSign, Camera, Building, Trees, Sparkles, Image, Link, Trash, Upload } from 'lucide-react'
-import { allProperties, formatPriceIndian } from '../data/mockData'
+import { useState, useRef } from 'react'
+import { Search, Plus, Edit2, Trash2, Eye, X, MapPin, Bed, Bath, Square, Home, AlertTriangle, Star, Flame, Shield, Calendar, Car, Compass, Camera, Trees, Sparkles, Image, Upload } from 'lucide-react'
+import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 8
 
@@ -9,8 +9,7 @@ function Badge({ children, className }) {
 }
 
 export default function Properties() {
-  const [properties, setProperties] = useState(allProperties)
-  const [initialized, setInitialized] = useState(false)
+  const { properties, addProperty, updateProperty, deleteProperty, formatPriceIndian } = useData()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -43,33 +42,6 @@ export default function Properties() {
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
-  // Load admin-managed properties from file on mount
-  useEffect(() => {
-    fetch('/api/load-properties')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Merge: admin properties override static ones by ID
-          const adminIds = new Set(data.map(p => p.id))
-          const merged = [...data]
-          allProperties.forEach(sp => { if (!adminIds.has(sp.id)) merged.push(sp) })
-          setProperties(merged)
-        }
-        setInitialized(true)
-      })
-      .catch(() => setInitialized(true))
-  }, [])
-
-  // Sync properties to file whenever they change (skip initial load)
-  useEffect(() => {
-    if (!initialized) return
-    fetch('/api/save-properties', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(properties),
-    }).catch(() => {})
-  }, [properties, initialized])
-
   const resetForm = () => ({
     title:'', location:'', price:'', beds:'', baths:'', sqft:'', type:'apartment', status:'sale',
     builder:'', reraId:'', possessionStatus:'Ready to Move', floor:'', furnishing:'Unfurnished',
@@ -92,38 +64,30 @@ export default function Properties() {
     setShowModal(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title || !form.location || !form.price) return
     const now = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+    const payload = {
+      ...form,
+      price: Number(form.price),
+      beds: Number(form.beds),
+      baths: Number(form.baths),
+      sqft: Number(form.sqft),
+      pricePerSqft: form.pricePerSqft ? Number(form.pricePerSqft) : null,
+      featured: form.badge === 'featured',
+      hot: form.badge === 'hot',
+      images: form.images || [],
+    }
     if (editing) {
-      setProperties(properties.map(p => p.id === editing ? {
-        ...p,
-        ...form,
-        price:Number(form.price),
-        beds:Number(form.beds),
-        baths:Number(form.baths),
-        sqft:Number(form.sqft),
-        pricePerSqft: form.pricePerSqft ? Number(form.pricePerSqft) : p.pricePerSqft,
-        updatedDate: now,
-      } : p))
+      await updateProperty(editing, { ...payload, updatedDate: now })
     } else {
-      const newId = Math.max(...properties.map(p => p.id), 0) + 1
-      setProperties([...properties, {
-        id:newId, ...form,
-        price:Number(form.price),
-        beds:Number(form.beds),
-        baths:Number(form.baths),
-        sqft:Number(form.sqft),
-        pricePerSqft: form.pricePerSqft ? Number(form.pricePerSqft) : null,
-        views:0, featured:form.badge==='featured', hot:form.badge==='hot', images:form.images||[],
-        agent:{ id:'admin', name:'Admin', avatar:'https://i.pravatar.cc/150?img=1', rating:4.5, sales:10, phone:'+91-9999999999', email:'admin@propertyinsta.com' },
-        neighborhood:{},
-        comments:0, shares:0, postDate:'Just now', lat:0, lng:0, emiEstimate:0, bankOffers:false,
-        trending:false, commercial:false, age:0, mediaAspectRatio:'4/3', listingStatus:'active',
-        rera:!!form.reraId, media:form.images||[], bedrooms:Number(form.beds), bathrooms:Number(form.baths),
-        area:Number(form.sqft), agentAvatar:'https://i.pravatar.cc/150?img=1',
-        possession:form.possessionStatus, possessionDate:form.possessionStatus==='Ready to Move'?'Ready to Move':now,
-      }])
+      await addProperty({
+        ...payload,
+        views: 0,
+        agent: { id: 'admin', name: 'Admin', avatar: 'https://i.pravatar.cc/150?img=1', rating: 4.5, sales: 10, phone: '+91-9999999999', email: 'admin@propertyinsta.com' },
+        neighborhood: {},
+        comments: 0, shares: 0, postDate: 'Just now', lat: 0, lng: 0, emiEstimate: 0, bankOffers: false,
+      })
     }
     setShowModal(false)
   }
@@ -140,8 +104,8 @@ export default function Properties() {
     setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== index) }))
   }
 
-  const handleDelete = () => {
-    setProperties(properties.filter(p => p.id !== showDelete))
+  const handleDelete = async () => {
+    await deleteProperty(showDelete)
     setShowDelete(null)
   }
 

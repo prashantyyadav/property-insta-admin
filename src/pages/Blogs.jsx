@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, Plus, Edit2, Trash2, Eye, X, AlertTriangle, FileText } from 'lucide-react'
-import { blogPosts } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 6
 
@@ -9,7 +9,7 @@ function Badge({ children, className }) {
 }
 
 export default function Blogs() {
-  const [blogs, setBlogs] = useState(blogPosts)
+  const { blogs, addBlog, updateBlog, deleteBlog } = useData()
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [page, setPage] = useState(1)
@@ -35,16 +35,16 @@ export default function Blogs() {
 
   const handleSave = () => {
     if (!form.title || !form.excerpt || !form.author) return
+    const tags = form.tags.split(',').map(t => t.trim()).filter(Boolean)
     if (editing) {
-      setBlogs(blogs.map(b => b.id===editing ? {...b, ...form, tags:form.tags.split(',').map(t=>t.trim()).filter(Boolean)} : b))
+      updateBlog(editing, { ...form, tags })
     } else {
-      const newId = Math.max(...blogs.map(b=>b.id),0)+1
-      setBlogs([...blogs, { id:newId, ...form, tags:form.tags.split(',').map(t=>t.trim()).filter(Boolean), date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }])
+      addBlog({ ...form, tags, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })
     }
     setShowModal(false)
   }
 
-  const handleDelete = () => { setBlogs(blogs.filter(b=>b.id!==showDelete)); setShowDelete(null) }
+  const handleDelete = () => { deleteBlog(showDelete); setShowDelete(null) }
 
   return (
     <div className="space-y-6">

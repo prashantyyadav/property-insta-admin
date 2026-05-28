@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Search, Plus, Edit2, Trash2, Eye, X, AlertTriangle, Image } from 'lucide-react'
-import { propertyStories } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 8
 
 export default function Stories() {
-  const [stories, setStories] = useState(propertyStories)
+  const { stories, addStory, updateStory, deleteStory } = useData()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
@@ -28,15 +28,14 @@ export default function Stories() {
   const handleSave = () => {
     if (!form.image || !form.label || !form.agent) return
     if (editing) {
-      setStories(stories.map(s => s.id===editing ? {...s, ...form} : s))
+      updateStory(editing, form)
     } else {
-      const newId = 's' + (Math.max(...stories.map(s=>parseInt(s.id.replace('s',''))),0)+1)
-      setStories([...stories, { id:newId, propertyId:null, ...form }])
+      addStory(form)
     }
     setShowModal(false)
   }
 
-  const handleDelete = () => { setStories(stories.filter(s=>s.id!==showDelete)); setShowDelete(null) }
+  const handleDelete = () => { deleteStory(showDelete); setShowDelete(null) }
 
   return (
     <div className="space-y-6">

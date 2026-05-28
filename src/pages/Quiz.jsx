@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { Plus, Edit2, Trash2, X, HelpCircle, Save, ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
-import { quizQuestions } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 export default function Quiz() {
-  const [questions, setQuestions] = useState(quizQuestions.map(q => ({
-    ...q,
-    options: q.options.map(o => ({ ...o })),
-  })))
+  const { quiz: questions, addQuizQuestion, updateQuizQuestion, deleteQuizQuestion } = useData()
   const [expanded, setExpanded] = useState(null)
   const [showDelete, setShowDelete] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -19,16 +16,15 @@ export default function Quiz() {
   ]})
 
   const updateQuestion = (id, field, value) => {
-    setQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q))
+    updateQuizQuestion(id, { [field]: value })
   }
 
   const updateOption = (qId, optIdx, field, value) => {
-    setQuestions(qs => qs.map(q => {
-      if (q.id !== qId) return q
-      const opts = [...q.options]
-      opts[optIdx] = { ...opts[optIdx], [field]: value }
-      return { ...q, options: opts }
-    }))
+    const q = questions.find(q => q.id === qId)
+    if (!q) return
+    const opts = [...q.options]
+    opts[optIdx] = { ...opts[optIdx], [field]: value }
+    updateQuizQuestion(qId, { options: opts })
   }
 
   const handleSave = () => {
@@ -37,14 +33,13 @@ export default function Quiz() {
   }
 
   const deleteQuestion = () => {
-    setQuestions(qs => qs.filter(q => q.id !== showDelete))
+    deleteQuizQuestion(showDelete)
     setShowDelete(null)
   }
 
   const addQuestion = () => {
     if (!newQ.question.trim()) return
-    const q = {
-      id: Date.now(),
+    addQuizQuestion({
       question: newQ.question,
       icon: newQ.icon || '❓',
       options: newQ.options.map((o, i) => ({
@@ -52,8 +47,7 @@ export default function Quiz() {
         label: o.label || `Option ${i + 1}`,
         icon: o.icon || ['🏢', '🏡', '🌆', '🌿'][i] || '📌',
       })),
-    }
-    setQuestions([...questions, q])
+    })
     setShowAdd(false)
     setNewQ({ question: '', icon: '❓', options: [
       { id: '', label: '', icon: '' },

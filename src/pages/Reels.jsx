@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
-import { Search, Plus, Edit2, Trash2, Eye, X, Play, Heart, MessageCircle, Share2, Clock, Tag, AlertTriangle, Video, ChevronDown, ChevronUp, Hash, Upload } from 'lucide-react'
-import { allReels, formatPriceIndian } from '../data/mockData'
+import { Search, Plus, Edit2, Trash2, Eye, X, Play, Heart, Clock, AlertTriangle, Video, ChevronDown, ChevronUp, Hash, Upload } from 'lucide-react'
+import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 8
 
@@ -32,7 +32,7 @@ function StatBadge({ icon: Icon, value, className }) {
 }
 
 export default function Reels() {
-  const [reels, setReels] = useState(allReels)
+  const { reels, addReel, updateReel, deleteReel, formatPriceIndian } = useData()
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -93,7 +93,7 @@ export default function Reels() {
     setShowModal(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title || !form.location || !form.video) return
     const payload = {
       ...form,
@@ -103,16 +103,15 @@ export default function Reels() {
       tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
     }
     if (editing) {
-      setReels(reels.map(r => r.id === editing ? { ...r, ...payload } : r))
+      await updateReel(editing, payload)
     } else {
-      const newId = Math.max(...reels.map(r => r.id), 100) + 1
-      setReels([...reels, { id: newId, propertyId: null, ...payload, views: 0, likes: 0 }])
+      await addReel({ propertyId: null, ...payload, views: 0, likes: 0 })
     }
     setShowModal(false)
   }
 
-  const handleDelete = () => {
-    setReels(reels.filter(r => r.id !== showDelete))
+  const handleDelete = async () => {
+    await deleteReel(showDelete)
     setShowDelete(null)
   }
 

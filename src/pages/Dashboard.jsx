@@ -25,7 +25,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { dashboardStats, revenueData, propertyTypeData, propertyStatusData, allProperties, allReels, recentProperties, formatPriceIndian } from '../data/mockData'
+import { useData } from '../context/DataContext'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#06b6d4']
 
@@ -76,6 +76,7 @@ function PropertyBadge({ type }) {
 }
 
 export default function Dashboard() {
+  const { dashboardStats, dashRevenueData: revenueData, dashPropertyTypeData: propertyTypeData, dashPropertyStatusData: propertyStatusData, recentProperties, formatPriceIndian } = useData()
   const [monthRange, setMonthRange] = useState(12)
 
   const filteredRevenueData = revenueData.slice(-monthRange)
