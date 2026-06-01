@@ -1,25 +1,26 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Shield, Mail, Lock, AlertCircle } from 'lucide-react'
+import { Shield, Mail, Lock, AlertCircle, AlertTriangle } from 'lucide-react'
 
 export default function Login() {
   const { login } = useAuth()
   const [email, setEmail] = useState('admin@example.com')
   const [password, setPassword] = useState('admin123')
   const [error, setError] = useState('')
+  const [warning, setWarning] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setWarning('')
     setLoading(true)
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    const result = login(email, password)
+    const result = await login(email, password)
     if (!result.success) {
-      setError(result.error)
+      setError(result.error || 'Login failed')
+    } else if (result.warning) {
+      setWarning(result.warning)
     }
     setLoading(false)
   }
@@ -41,8 +42,15 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
+              </div>
+            )}
+
+            {warning && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                {warning}
               </div>
             )}
 
@@ -102,6 +110,9 @@ export default function Login() {
           <div className="mt-6 pt-6 border-t border-gray-100 text-center">
             <p className="text-sm text-gray-500">
               Demo credentials: <span className="font-medium text-gray-700">admin@example.com / admin123</span>
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              For Supabase writes to work, create a real user in your Supabase Auth dashboard with the same credentials.
             </p>
           </div>
         </div>

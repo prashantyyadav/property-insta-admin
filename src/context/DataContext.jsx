@@ -124,6 +124,8 @@ const DataContext = createContext(null);
 export function DataProvider({ children }) {
   // Supabase availability flag
   const [dbReady, setDbReady] = useState(false);
+  // Error state to surface Supabase issues to the UI
+  const [dbError, setDbError] = useState(null);
 
   // ---- State: start with static data, upgrade to Supabase when available ----
   const [properties, setProperties] = useState(staticProperties);
@@ -306,10 +308,20 @@ export function DataProvider({ children }) {
           floor_plan: property.floorPlan,
         }).select().single();
         if (error) throw error;
+        setDbError(null); // clear any previous error on success
         return data;
       } catch (supabaseErr) {
-        console.warn('Supabase addProperty failed, using local fallback:', supabaseErr);
+        const msg = supabaseErr?.message || 'Unknown error';
+        console.error('Supabase addProperty failed:', msg);
+        // RLS / permission errors — suggest next steps
+        if (msg.includes('row-level security') || msg.includes('policy') || msg.includes('permission denied') || msg.includes('JWT')) {
+          setDbError('Supabase RLS policy rejected the write. Make sure you are logged into Supabase (not just mock auth). Create a user in Supabase Auth dashboard with the same email/password, or disable RLS on the properties table.');
+        } else {
+          setDbError(`Supabase write error: ${msg}`);
+        }
       }
+    } else {
+      setDbError('Supabase is not configured. Copy .env.example to .env and fill in your Supabase project values.');
     }
     // Fallback: local state update (no Supabase OR Supabase failed)
     const newId = Math.max(...properties.map(p => typeof p.id === 'number' ? p.id : 0), 0) + 1;
@@ -338,8 +350,15 @@ export function DataProvider({ children }) {
         }
         const { error } = await supabase.from('properties').update(dbUpdates).eq('id', id);
         if (error) throw error;
+        setDbError(null); // clear any previous error on success
       } catch (supabaseErr) {
-        console.warn('Supabase updateProperty failed, updating local state only:', supabaseErr);
+        const msg = supabaseErr?.message || 'Unknown error';
+        console.error('Supabase updateProperty failed:', msg);
+        if (msg.includes('row-level security') || msg.includes('policy') || msg.includes('permission denied') || msg.includes('JWT')) {
+          setDbError('Supabase RLS policy rejected the update. Ensure you are authenticated with Supabase, not just mock auth.');
+        } else {
+          setDbError(`Supabase update error: ${msg}`);
+        }
       }
     }
     // Always update local state immediately for responsiveness
@@ -351,8 +370,15 @@ export function DataProvider({ children }) {
       try {
         const { error } = await supabase.from('properties').delete().eq('id', id);
         if (error) throw error;
+        setDbError(null); // clear any previous error on success
       } catch (supabaseErr) {
-        console.warn('Supabase deleteProperty failed, removing from local state only:', supabaseErr);
+        const msg = supabaseErr?.message || 'Unknown error';
+        console.error('Supabase deleteProperty failed:', msg);
+        if (msg.includes('row-level security') || msg.includes('policy') || msg.includes('permission denied') || msg.includes('JWT')) {
+          setDbError('Supabase RLS policy rejected the delete. Ensure you are authenticated with Supabase, not just mock auth.');
+        } else {
+          setDbError(`Supabase delete error: ${msg}`);
+        }
       }
     }
     setProperties(prev => prev.filter(p => p.id !== id));
@@ -539,6 +565,11 @@ export function DataProvider({ children }) {
   }, []);
 
   // ==========================================================================
+  // Clear DB error
+  // ==========================================================================
+  const clearDbError = useCallback(() => setDbError(null), []);
+
+  // ==========================================================================
   // Exposed context value
   // ==========================================================================
   const value = {
@@ -552,7 +583,7 @@ export function DataProvider({ children }) {
     dashSiteConfig: staticSiteConfig,
     recentProperties,
     // Status
-    dbReady,
+    dbReady, dbError, clearDbError,
     // Property CRUD
     addProperty, updateProperty, deleteProperty,
     // Reel CRUD
