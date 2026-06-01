@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
-    'Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) not set. ' +
+    'Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY) not set. ' +
     'Falling back to mock data from src/data/mockData.js. ' +
     'Copy .env.example to .env and fill in your Supabase project values.'
   );
@@ -13,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Supabase client instance.
- * Uses the anonymous key for public reads and authenticated writes.
+ * Uses the anonymous/public key for public reads and authenticated writes.
  * Row-Level Security (RLS) policies on the properties/reels tables enforce:
  *  - Anyone can SELECT (read)
  *  - Only authenticated users can INSERT/UPDATE/DELETE
