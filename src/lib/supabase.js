@@ -5,6 +5,9 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://ioblbfugnhtghvxbyeos.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvYmxiZnVnbmh0Z2h2eGJ5ZW9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTM2NzcsImV4cCI6MjA5NTUyOTY3N30.fyCOdUh5M4x4KeLaEG6Apsfe6U2AvT0acm1a5_JSBQA';
 
+// Debug: confirm which project we're hitting
+console.log('[Supabase] Connecting to project:', SUPABASE_URL);
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
 const supabaseAnonKey =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
