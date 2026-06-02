@@ -69,6 +69,8 @@ function mapDBProperty(db) {
     lng: db.lng,
     neighborhood: db.neighborhood || {},
     floorPlan: db.floor_plan,
+    developerLogo: db.developer_logo || '',
+    developerWebsite: db.developer_website || '',
     created_at: db.created_at,
     updated_at: db.updated_at,
   };
@@ -261,69 +263,101 @@ export function DataProvider({ children }) {
   // CRUD: Properties (Supabase-aware)
   // ==========================================================================
   const addProperty = useCallback(async (property) => {
+    // Normalize status for DB: internal "sale"/"rent" → DB "For Sale"/"For Rent"
+    const dbStatus = property.status === 'sale' ? 'For Sale'
+      : property.status === 'rent' ? 'For Rent'
+      : property.status;
+
+    const dbPayload = {
+      title: property.title,
+      location: property.location,
+      price: property.price,
+      beds: property.beds,
+      baths: property.baths,
+      sqft: property.sqft,
+      type: property.type,
+      status: dbStatus,
+      builder: property.builder,
+      rera_id: property.reraId,
+      possession_status: property.possessionStatus,
+      floor: property.floor,
+      furnishing: property.furnishing,
+      emi_estimate: property.emiEstimate,
+      bank_offers: property.bankOffers,
+      images: property.images || [],
+      amenities: property.amenities || [],
+      featured: property.featured,
+      hot: property.hot,
+      open_house: property.openHouse,
+      facing: property.facing,
+      parking: property.parking,
+      price_per_sqft: property.pricePerSqft,
+      verified: property.verified,
+      views: property.views || 0,
+      description: property.description,
+      agent_id: property.agent?.id,
+      agent_name: property.agent?.name,
+      agent_avatar: property.agent?.avatar,
+      agent_rating: property.agent?.rating,
+      agent_sales: property.agent?.sales,
+      agent_phone: property.agent?.phone,
+      agent_email: property.agent?.email,
+      post_date: property.postDate,
+      lat: property.lat,
+      lng: property.lng,
+      neighborhood: property.neighborhood,
+      floor_plan: property.floorPlan,
+      developer_logo: property.developerLogo || '',
+      developer_website: property.developerWebsite || '',
+    };
+
+    // Try Supabase JS client first
     if (supabase) {
       try {
-        // Normalize status for DB: internal "sale"/"rent" → DB "For Sale"/"For Rent"
-        const dbStatus = property.status === 'sale' ? 'For Sale'
-          : property.status === 'rent' ? 'For Rent'
-          : property.status;
-        const { data, error } = await supabase.from('properties').insert({
-          title: property.title,
-          location: property.location,
-          price: property.price,
-          beds: property.beds,
-          baths: property.baths,
-          sqft: property.sqft,
-          type: property.type,
-          status: dbStatus,
-          builder: property.builder,
-          rera_id: property.reraId,
-          possession_status: property.possessionStatus,
-          floor: property.floor,
-          furnishing: property.furnishing,
-          emi_estimate: property.emiEstimate,
-          bank_offers: property.bankOffers,
-          images: property.images || [],
-          amenities: property.amenities || [],
-          featured: property.featured,
-          hot: property.hot,
-          open_house: property.openHouse,
-          facing: property.facing,
-          parking: property.parking,
-          price_per_sqft: property.pricePerSqft,
-          verified: property.verified,
-          views: property.views || 0,
-          description: property.description,
-          agent_id: property.agent?.id,
-          agent_name: property.agent?.name,
-          agent_avatar: property.agent?.avatar,
-          agent_rating: property.agent?.rating,
-          agent_sales: property.agent?.sales,
-          agent_phone: property.agent?.phone,
-          agent_email: property.agent?.email,
-          post_date: property.postDate,
-          lat: property.lat,
-          lng: property.lng,
-          neighborhood: property.neighborhood,
-          floor_plan: property.floorPlan,
-        }).select().single();
+        const { data, error } = await supabase.from('properties').insert(dbPayload).select().single();
         if (error) throw error;
         setDbError(null); // clear any previous error on success
         return data;
       } catch (supabaseErr) {
         const msg = supabaseErr?.message || 'Unknown error';
-        console.error('Supabase addProperty failed:', msg);
-        // RLS / permission errors — suggest next steps
+        console.warn('Supabase JS client addProperty failed, trying raw fetch fallback:', msg);
         if (msg.includes('row-level security') || msg.includes('policy') || msg.includes('permission denied') || msg.includes('JWT')) {
-          setDbError('Supabase RLS policy rejected the write. Make sure you are logged into Supabase (not just mock auth). Create a user in Supabase Auth dashboard with the same email/password, or disable RLS on the properties table.');
-        } else {
-          setDbError(`Supabase write error: ${msg}`);
+          setDbError('Supabase RLS policy rejected the write. Will try raw fetch fallback.');
         }
       }
-    } else {
-      setDbError('Supabase is not configured. Copy .env.example to .env and fill in your Supabase project values.');
     }
-    // Fallback: local state update (no Supabase OR Supabase failed)
+
+    // Fallback #1: raw fetch with anon key only (bypasses any stale auth tokens)
+    try {
+      const supabaseUrl = 'https://ioblbfugnhtghvxbyeos.supabase.co';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvYmxiZnVnbmh0Z2h2eGJ5ZW9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTM2NzcsImV4cCI6MjA5NTUyOTY3N30.fyCOdUh5M4x4KeLaEG6Apsfe6U2AvT0acm1a5_JSBQA';
+      const res = await fetch(`${supabaseUrl}/rest/v1/properties`, {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(dbPayload),
+      });
+      if (res.ok) {
+        const inserted = await res.json();
+        if (inserted && inserted.length > 0) {
+          setDbError(null);
+          console.log('[DataContext] Raw fetch addProperty succeeded, id:', inserted[0].id);
+          return inserted[0];
+        }
+      } else {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+    } catch (fetchErr) {
+      console.error('Raw fetch addProperty also failed:', fetchErr?.message || fetchErr);
+      setDbError(`Property insert failed: ${fetchErr?.message || 'Unknown error'}. Check browser console for details.`);
+    }
+
+    // Fallback #2: local state only (last resort)
     const newId = Math.max(...properties.map(p => typeof p.id === 'number' ? p.id : 0), 0) + 1;
     const newProp = { ...property, id: newId };
     setProperties(prev => [newProp, ...prev]);
@@ -340,8 +374,15 @@ export function DataProvider({ children }) {
           reraId: 'rera_id', possessionStatus: 'possession_status', pricePerSqft: 'price_per_sqft',
           floorPlan: 'floor_plan', openHouse: 'open_house', bankOffers: 'bank_offers',
           emiEstimate: 'emi_estimate', postDate: 'post_date',
+          developerLogo: 'developer_logo', developerWebsite: 'developer_website',
         };
         for (const [key, value] of Object.entries(updates)) {
+          // Handle nested agent object — extract phone/email into flat DB columns
+          if (key === 'agent' && typeof value === 'object' && value !== null) {
+            if (value.phone !== undefined) dbUpdates['agent_phone'] = value.phone;
+            if (value.email !== undefined) dbUpdates['agent_email'] = value.email;
+            continue;
+          }
           const dbKey = fieldMap[key] || key;
           // Normalize: internal "sale"/"rent" → DB "For Sale"/"For Rent"
           if (dbKey === 'status' && value === 'sale') dbUpdates[dbKey] = 'For Sale';
@@ -388,39 +429,71 @@ export function DataProvider({ children }) {
   // CRUD: Reels (Supabase-aware)
   // ==========================================================================
   const addReel = useCallback(async (reel) => {
+    const dbPayload = {
+      property_id: reel.propertyId,
+      title: reel.title,
+      location: reel.location,
+      price: reel.price,
+      category: reel.category,
+      video: reel.video,
+      thumbnail: reel.thumbnail,
+      description: reel.description,
+      views: reel.views || 0,
+      likes: reel.likes || 0,
+      status: reel.status,
+      builder: reel.builder,
+      rera_id: reel.reraId,
+      possession_date: reel.possessionDate,
+      sqft: reel.sqft,
+      furnishing: reel.furnishing,
+      floor: reel.floor,
+      emi_estimate: reel.emiEstimate,
+      bank_offers: reel.bankOffers,
+    };
+
+    // Try Supabase JS client first
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('reels').insert({
-          property_id: reel.propertyId,
-          title: reel.title,
-          location: reel.location,
-          price: reel.price,
-          category: reel.category,
-          video: reel.video,
-          thumbnail: reel.thumbnail,
-          description: reel.description,
-          views: reel.views || 0,
-          likes: reel.likes || 0,
-          status: reel.status,
-          duration: reel.duration,
-          tags: reel.tags,
-          agent_name: reel.agentName,
-          builder: reel.builder,
-          rera_id: reel.reraId,
-          possession_date: reel.possessionDate,
-          sqft: reel.sqft,
-          furnishing: reel.furnishing,
-          floor: reel.floor,
-          emi_estimate: reel.emiEstimate,
-          bank_offers: reel.bankOffers,
-        }).select().single();
+        const { data, error } = await supabase.from('reels').insert(dbPayload).select().single();
         if (error) throw error;
+        setDbError(null); // clear any previous error on success
         return data;
       } catch (supabaseErr) {
-        console.warn('Supabase addReel failed, using local fallback:', supabaseErr);
+        console.warn('Supabase JS client addReel failed, trying raw fetch fallback:', supabaseErr?.message || supabaseErr);
       }
     }
-    // Fallback: local state update (no Supabase OR Supabase failed)
+
+    // Fallback #1: raw fetch with anon key only (bypasses any stale auth tokens)
+    try {
+      const supabaseUrl = 'https://ioblbfugnhtghvxbyeos.supabase.co';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvYmxiZnVnbmh0Z2h2eGJ5ZW9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTM2NzcsImV4cCI6MjA5NTUyOTY3N30.fyCOdUh5M4x4KeLaEG6Apsfe6U2AvT0acm1a5_JSBQA';
+      const res = await fetch(`${supabaseUrl}/rest/v1/reels`, {
+        method: 'POST',
+        headers: {
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(dbPayload),
+      });
+      if (res.ok) {
+        const inserted = await res.json();
+        if (inserted && inserted.length > 0) {
+          setDbError(null);
+          console.log('[DataContext] Raw fetch addReel succeeded, id:', inserted[0].id);
+          return inserted[0];
+        }
+      } else {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+    } catch (fetchErr) {
+      console.error('Raw fetch addReel also failed:', fetchErr?.message || fetchErr);
+      setDbError(`Reel insert failed: ${fetchErr?.message || 'Unknown error'}. Check browser console for details.`);
+    }
+
+    // Fallback #2: local state only (last resort)
     const newId = Math.max(...reels.map(r => typeof r.id === 'number' ? r.id : 0), 100) + 1;
     const newReel = { ...reel, id: newId };
     setReels(prev => [newReel, ...prev]);

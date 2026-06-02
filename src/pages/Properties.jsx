@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Search, Plus, Edit2, Trash2, Eye, X, MapPin, Bed, Bath, Square, Home, AlertTriangle, Star, Flame, Shield, Calendar, Car, Compass, Camera, Trees, Sparkles, Image, Upload } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Eye, X, MapPin, Bed, Bath, Square, Home, AlertTriangle, Star, Flame, Shield, Calendar, Car, Compass, Camera, Trees, Sparkles, Image, Upload, Phone, Mail, Globe, Building2 } from 'lucide-react'
 import { useData } from '../context/DataContext'
 
 const ITEMS_PER_PAGE = 8
@@ -25,6 +25,7 @@ export default function Properties() {
     builder:'', reraId:'', possessionStatus:'Ready to Move', floor:'', furnishing:'Unfurnished',
     description:'', amenities:[], images:[],
     badge:'', openHouse:false, facing:'', parking:'', pricePerSqft:'', verified:false, floorPlan:'',
+    agentPhone:'', agentEmail:'', developerLogo:'', developerWebsite:'',
   })
   const [imageUrlInput, setImageUrlInput] = useState('')
 
@@ -47,6 +48,7 @@ export default function Properties() {
     builder:'', reraId:'', possessionStatus:'Ready to Move', floor:'', furnishing:'Unfurnished',
     description:'', amenities:[], images:[],
     badge:'', openHouse:false, facing:'', parking:'', pricePerSqft:'', verified:false, floorPlan:'',
+    agentPhone:'', agentEmail:'', developerLogo:'', developerWebsite:'',
   })
 
   const openAdd = () => { setEditing(null); setForm(resetForm()); setImageUrlInput(''); setShowModal(true) }
@@ -59,6 +61,8 @@ export default function Properties() {
       images:[...(p.images||[])],
       badge:p.badge||'', openHouse:p.openHouse||false, facing:p.facing||'', parking:p.parking||'',
       pricePerSqft:p.pricePerSqft||'', verified:p.verified||false, floorPlan:p.floorPlan||'',
+      agentPhone:p.agent?.phone||'', agentEmail:p.agent?.email||'',
+      developerLogo:p.developerLogo||'', developerWebsite:p.developerWebsite||'',
     })
     setImageUrlInput('')
     setShowModal(true)
@@ -79,14 +83,22 @@ export default function Properties() {
       images: form.images || [],
     }
     if (editing) {
-      await updateProperty(editing, { ...payload, updatedDate: now })
+      await updateProperty(editing, {
+        ...payload,
+        updatedDate: now,
+        agent: { phone: form.agentPhone, email: form.agentEmail },
+        developerLogo: form.developerLogo,
+        developerWebsite: form.developerWebsite,
+      })
     } else {
       await addProperty({
         ...payload,
         views: 0,
-        agent: { id: 'admin', name: 'Admin', avatar: 'https://i.pravatar.cc/150?img=1', rating: 4.5, sales: 10, phone: '+91-9999999999', email: 'admin@propertyinsta.com' },
+        agent: { id: 'admin', name: 'Admin', avatar: 'https://i.pravatar.cc/150?img=1', rating: 4.5, sales: 10, phone: form.agentPhone || '+91-9999999999', email: form.agentEmail || 'admin@propertyinsta.com' },
         neighborhood: {},
         comments: 0, shares: 0, postDate: 'Just now', lat: 0, lng: 0, emiEstimate: 0, bankOffers: false,
+        developerLogo: form.developerLogo,
+        developerWebsite: form.developerWebsite,
       })
     }
     setShowModal(false)
@@ -455,6 +467,36 @@ export default function Properties() {
                     />
                     <span className="text-sm text-gray-700 flex items-center gap-1"><Shield className="w-4 h-4" />RERA Verified</span>
                   </label>
+                </div>
+              </div>
+
+              {/* Agent Contact Info */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Phone className="w-4 h-4" />Agent Contact Info</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Agent Phone</label>
+                    <input type="text" value={form.agentPhone} onChange={e => setForm({...form, agentPhone: e.target.value})} className="input-field" placeholder="+91-9999999999" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Agent Email</label>
+                    <input type="email" value={form.agentEmail} onChange={e => setForm({...form, agentEmail: e.target.value})} className="input-field" placeholder="agent@propertyinsta.com" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Developer / Builder Info */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Building2 className="w-4 h-4" />Developer / Builder Info</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer Logo URL</label>
+                    <input type="text" value={form.developerLogo} onChange={e => setForm({...form, developerLogo: e.target.value})} className="input-field" placeholder="https://...logo.png" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer Website</label>
+                    <input type="text" value={form.developerWebsite} onChange={e => setForm({...form, developerWebsite: e.target.value})} className="input-field" placeholder="https://www.developer.com" />
+                  </div>
                 </div>
               </div>
 
