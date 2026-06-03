@@ -441,6 +441,9 @@ export function DataProvider({ children }) {
       views: reel.views || 0,
       likes: reel.likes || 0,
       status: reel.status,
+      duration: reel.duration || '',
+      tags: reel.tags || [],
+      agent_name: reel.agentName || '',
       builder: reel.builder,
       rera_id: reel.reraId,
       possession_date: reel.possessionDate,
@@ -457,6 +460,8 @@ export function DataProvider({ children }) {
         const { data, error } = await supabase.from('reels').insert(dbPayload).select().single();
         if (error) throw error;
         setDbError(null); // clear any previous error on success
+        const mapped = mapDBReel(data);
+        setReels(prev => [mapped, ...prev]);
         return data;
       } catch (supabaseErr) {
         console.warn('Supabase JS client addReel failed, trying raw fetch fallback:', supabaseErr?.message || supabaseErr);
@@ -482,6 +487,8 @@ export function DataProvider({ children }) {
         if (inserted && inserted.length > 0) {
           setDbError(null);
           console.log('[DataContext] Raw fetch addReel succeeded, id:', inserted[0].id);
+          const mapped = mapDBReel(inserted[0]);
+          setReels(prev => [mapped, ...prev]);
           return inserted[0];
         }
       } else {
