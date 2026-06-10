@@ -13,6 +13,8 @@ import SiteConfig from './pages/SiteConfig'
 import Notifications from './pages/Notifications'
 import Reviews from './pages/Reviews'
 import Quiz from './pages/Quiz'
+import BuilderERP from './pages/BuilderERP'
+import ChannelPartners from './pages/ChannelPartners'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -70,6 +72,8 @@ export default function App() {
         <Route path="reviews" element={<Reviews />} />
         <Route path="quiz" element={<Quiz />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="builder-erp" element={<BuilderERP />} />
+        <Route path="channel-partners" element={<ChannelPartners />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

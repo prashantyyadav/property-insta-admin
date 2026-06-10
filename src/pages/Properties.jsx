@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Search, Plus, Edit2, Trash2, Eye, X, MapPin, Bed, Bath, Square, Home, AlertTriangle, Star, Flame, Shield, Calendar, Car, Compass, Camera, Trees, Sparkles, Image, Upload, Phone, Mail, Globe, Building2 } from 'lucide-react'
 import { useData } from '../context/DataContext'
 
@@ -162,6 +162,7 @@ export default function Properties() {
             <option value="all">All Status</option>
             <option value="sale">For Sale</option>
             <option value="rent">For Rent</option>
+            <option value="lease">For Lease</option>
           </select>
           <select value={possessionFilter} onChange={e => { setPossessionFilter(e.target.value); setPage(1) }} className="input-field w-auto">
             <option value="all">All Possession</option>
@@ -325,6 +326,7 @@ export default function Properties() {
                     <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="input-field">
                       <option value="sale">For Sale</option>
                       <option value="rent">For Rent</option>
+                      <option value="lease">For Lease</option>
                     </select>
                   </div>
                   <div>

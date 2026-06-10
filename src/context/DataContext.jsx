@@ -645,11 +645,6 @@ export function DataProvider({ children }) {
   }, []);
 
   // ==========================================================================
-  // Clear DB error
-  // ==========================================================================
-  const clearDbError = useCallback(() => setDbError(null), []);
-
-  // ==========================================================================
   // Exposed context value
   // ==========================================================================
   const value = {
@@ -663,7 +658,7 @@ export function DataProvider({ children }) {
     dashSiteConfig: staticSiteConfig,
     recentProperties,
     // Status
-    dbReady, dbError, clearDbError,
+    dbReady, dbError,
     // Property CRUD
     addProperty, updateProperty, deleteProperty,
     // Reel CRUD

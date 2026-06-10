@@ -15,21 +15,40 @@ import {
   Bell,
   Star,
   HelpCircle,
+  Building2,
+  Network,
 } from 'lucide-react'
 import { useState } from 'react'
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/properties', label: 'Properties', icon: Home },
-  { path: '/reels', label: 'Property Reels', icon: Film },
-  { path: '/stories', label: 'Stories', icon: PlayCircle },
-  { path: '/blogs', label: 'Blog Posts', icon: FileText },
-  { path: '/agents', label: 'Agents', icon: Users },
-  { path: '/site-config', label: 'Site Config', icon: Globe },
-  { path: '/notifications', label: 'Notifications', icon: Bell },
-  { path: '/reviews', label: 'Reviews', icon: Star },
-  { path: '/quiz', label: 'Quiz', icon: HelpCircle },
-  { path: '/settings', label: 'Settings', icon: Settings },
+const navSections = [
+  {
+    label: 'Content',
+    items: [
+      { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/properties', label: 'Properties', icon: Home },
+      { path: '/reels', label: 'Property Reels', icon: Film },
+      { path: '/stories', label: 'Stories', icon: PlayCircle },
+      { path: '/blogs', label: 'Blog Posts', icon: FileText },
+      { path: '/agents', label: 'Agents', icon: Users },
+    ],
+  },
+  {
+    label: 'Builder OS',
+    items: [
+      { path: '/builder-erp', label: 'Builder ERP', icon: Building2 },
+      { path: '/channel-partners', label: 'Channel Partners', icon: Network },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { path: '/site-config', label: 'Site Config', icon: Globe },
+      { path: '/notifications', label: 'Notifications', icon: Bell },
+      { path: '/reviews', label: 'Reviews', icon: Star },
+      { path: '/quiz', label: 'Quiz', icon: HelpCircle },
+      { path: '/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
 export default function Sidebar() {
@@ -53,23 +72,32 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 space-y-1 px-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
-                isActive
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
-              } ${collapsed ? 'justify-center' : ''}`
-            }
-          >
-            <item.icon className="w-5 h-5" />
-            {!collapsed && <span className="font-medium">{item.label}</span>}
-          </NavLink>
+      <nav className="flex-1 py-4 px-2 overflow-y-auto space-y-1">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            {!collapsed && (
+              <div className="px-3 pt-4 pb-1 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                {section.label}
+              </div>
+            )}
+            {section.items.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-primary-600 text-white'
+                      : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
+                  } ${collapsed ? 'justify-center' : ''}`
+                }
+              >
+                <item.icon className="w-5 h-5" />
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 
