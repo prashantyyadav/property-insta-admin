@@ -15,6 +15,8 @@ import Reviews from './pages/Reviews'
 import Quiz from './pages/Quiz'
 import BuilderERP from './pages/BuilderERP'
 import ChannelPartners from './pages/ChannelPartners'
+import SocietyOS from './pages/SocietyOS'
+import PropertyManagement from './pages/PropertyManagement'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -74,6 +76,8 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="builder-erp" element={<BuilderERP />} />
         <Route path="channel-partners" element={<ChannelPartners />} />
+        <Route path="society-os" element={<SocietyOS />} />
+        <Route path="property-management" element={<PropertyManagement />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

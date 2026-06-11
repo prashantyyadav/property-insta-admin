@@ -8,21 +8,21 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#eef4fd',
+          100: '#d9e6fb',
+          200: '#b6cef6',
+          300: '#86adef',
+          400: '#5b8be6',
+          500: '#2e6fe0',
+          600: '#1f56c4',
+          700: '#1b4db1',
+          800: '#173a86',
+          900: '#16357a',
         },
         sidebar: {
-          DEFAULT: '#1e293b',
-          hover: '#334155',
-          active: '#0f172a',
+          DEFAULT: '#0f1b2d',
+          hover: '#1d2c44',
+          active: '#0a1322',
         }
       }
     },

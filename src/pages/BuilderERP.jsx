@@ -105,7 +105,7 @@ export default function BuilderERP() {
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       <div className="flex items-center justify-between">
@@ -119,7 +119,7 @@ export default function BuilderERP() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Units', value: totalUnits.toLocaleString(), icon: Package, color: 'bg-blue-500' },
           { label: 'Booked', value: totalBooked.toLocaleString(), icon: CheckCircle, color: 'bg-green-500' },
@@ -157,7 +157,7 @@ export default function BuilderERP() {
                   <button onClick={e => openDeleteProject(p, e)} className="p-1 rounded hover:bg-red-50"><Trash2 className="w-4 h-4 text-red-400" /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div><div className="text-xl font-bold text-gray-900">{p.totalUnits}</div><div className="text-xs text-gray-500">Total Units</div></div>
                 <div><div className="text-xl font-bold text-green-600">{p.booked}</div><div className="text-xs text-gray-500">Booked</div></div>
                 <div><div className="text-xl font-bold text-orange-500">{p.available}</div><div className="text-xs text-gray-500">Available</div></div>
@@ -174,7 +174,7 @@ export default function BuilderERP() {
       )}
 
       {tab === 'bookings' && (
-        <div className="card overflow-hidden p-0">
+        <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
               <tr>{['Booking ID', 'Buyer', 'Unit', 'Project', 'Value', 'Token', 'Status', 'Date', 'Actions'].map(h => <th key={h} className="text-left px-4 py-3">{h}</th>)}</tr>
@@ -263,21 +263,21 @@ export default function BuilderERP() {
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b"><h2 className="text-lg font-bold">{modal === 'add-project' ? 'Add Project' : 'Edit Project'}</h2><button onClick={() => setModal(null)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Project Name *</label><input className="input-field" placeholder="DLF Privana South" value={form.name||''} onChange={e => f('name', e.target.value)} /></div>
                 <div><label className="label">Type</label><select className="input-field" value={form.type||'Residential'} onChange={e => f('type', e.target.value)}><option>Residential</option><option>Commercial</option><option>Mixed</option></select></div>
               </div>
               <div><label className="label">Location *</label><input className="input-field" placeholder="Sector 77, SPR, Gurugram" value={form.location||''} onChange={e => f('location', e.target.value)} /></div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div><label className="label">Total Units</label><input className="input-field" type="number" value={form.totalUnits||''} onChange={e => f('totalUnits', e.target.value)} /></div>
                 <div><label className="label">Booked</label><input className="input-field" type="number" value={form.booked||''} onChange={e => f('booked', e.target.value)} /></div>
                 <div><label className="label">Available</label><input className="input-field" type="number" value={form.available||''} onChange={e => f('available', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Price Range</label><input className="input-field" placeholder="₹1.8Cr–₹3.5Cr" value={form.priceRange||''} onChange={e => f('priceRange', e.target.value)} /></div>
                 <div><label className="label">Possession Date</label><input className="input-field" placeholder="Dec 2028" value={form.possession||''} onChange={e => f('possession', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">RERA ID</label><input className="input-field" placeholder="HR/RERA/GUR/2025/301" value={form.rera||''} onChange={e => f('rera', e.target.value)} /></div>
                 <div><label className="label">Status</label><select className="input-field" value={form.status||'Under Construction'} onChange={e => f('status', e.target.value)}><option>Under Construction</option><option>Ready to Move</option><option>Launching Soon</option></select></div>
               </div>
@@ -297,19 +297,19 @@ export default function BuilderERP() {
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b"><h2 className="text-lg font-bold">{modal === 'add-booking' ? 'Add Booking' : 'Edit Booking'}</h2><button onClick={() => setModal(null)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Buyer Name *</label><input className="input-field" placeholder="Arjun Sharma" value={form.buyer||''} onChange={e => f('buyer', e.target.value)} /></div>
                 <div><label className="label">Phone</label><input className="input-field" placeholder="+91 98765 43210" value={form.phone||''} onChange={e => f('phone', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Project *</label><select className="input-field" value={form.project||''} onChange={e => f('project', e.target.value)}><option value="">Select project…</option>{projects.map(p => <option key={p.id}>{p.name}</option>)}</select></div>
                 <div><label className="label">Unit</label><input className="input-field" placeholder="Tower C, Flat 1204" value={form.unit||''} onChange={e => f('unit', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Deal Value (₹)</label><input className="input-field" type="number" placeholder="75000000" value={form.value||''} onChange={e => f('value', e.target.value)} /></div>
                 <div><label className="label">Token Amount (₹)</label><input className="input-field" type="number" placeholder="1000000" value={form.token||''} onChange={e => f('token', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Status</label><select className="input-field" value={form.status||'Active'} onChange={e => f('status', e.target.value)}><option>Active</option><option>Pending Docs</option><option>Cancelled</option><option>Registered</option></select></div>
                 <div><label className="label">Date</label><input className="input-field" type="date" value={form.date||''} onChange={e => f('date', e.target.value)} /></div>
               </div>

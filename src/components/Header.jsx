@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Bell, Search, User, Moon, Sun } from 'lucide-react'
+import { Bell, Search, User, Moon, Sun, Menu } from 'lucide-react'
 import { notifications } from '../data/mockData'
 
-export default function Header() {
+export default function Header({ onMenuClick = () => {} }) {
   const { user } = useAuth()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
@@ -36,9 +36,16 @@ export default function Header() {
   const unreadCount = notifications.length
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-10">
-      {/* Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-md">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-10">
+      {/* Left: hamburger (mobile) + search */}
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-md">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5 text-gray-600" />
+        </button>
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -52,7 +59,7 @@ export default function Header() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         {/* Dark Mode Toggle */}
         <button
           onClick={() => setDarkMode(!darkMode)}

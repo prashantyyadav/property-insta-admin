@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Users, IndianRupee, TrendingUp, Award, Phone, MessageSquare, Plus, Search, Edit2, Trash2, X } from 'lucide-react'
+import { useSupabaseCollection } from '../hooks/useSupabaseCollection'
 
 const TIERS = { Platinum: '#7C3AED', Gold: '#D97706', Silver: '#6B7280', Bronze: '#92400E' }
 
@@ -35,8 +36,8 @@ function Toast({ msg, type, onClose }) {
 
 export default function ChannelPartners() {
   const [tab, setTab] = useState('partners')
-  const [cps, setCps] = useState(INIT_CPS)
-  const [leads, setLeads] = useState(INIT_LEADS)
+  const { rows: cps, add: addCp, update: updateCp, remove: removeCp } = useSupabaseCollection('channel_partners', INIT_CPS, { localKey: 'os_channel_partners', ascending: false })
+  const { rows: leads, add: addLead, update: updateLead, remove: removeLead } = useSupabaseCollection('cp_leads', INIT_LEADS, { localKey: 'os_cp_leads', ascending: false })
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({})
@@ -50,42 +51,46 @@ export default function ChannelPartners() {
   const openEditCP = (cp) => { setForm({ ...cp }); setEditTarget(cp.id); setModal('cp') }
   const openDeleteCP = (cp) => { setEditTarget(cp); setModal('delete-cp') }
   const openAddLead = () => { setForm({ ...BLANK_LEAD }); setEditTarget(null); setModal('lead') }
-  const openEditLead = (l) => { setForm({ ...l }); setEditTarget(l.id); setModal('lead') }
+  const openEditLead = (l) => { setForm({ ...l, date: l.date || l.lead_date }); setEditTarget(l.id); setModal('lead') }
   const openDeleteLead = (l) => { setEditTarget(l); setModal('delete-lead') }
 
-  const saveCP = () => {
+  const saveCP = async () => {
     if (!form.name || !form.owner) { showToast('Name and owner are required', 'warning'); return }
+    // eslint-disable-next-line no-unused-vars
+    const { id, created_at, deals, commission, rating, ...rest } = form
     if (editTarget) {
-      setCps(prev => prev.map(c => c.id === editTarget ? { ...form, id: editTarget, deals: Number(form.deals) || 0, commission: Number(form.commission) || 0, rating: Number(form.rating) || 4.0 } : c))
+      await updateCp(editTarget, { ...rest, deals: Number(deals) || 0, commission: Number(commission) || 0, rating: Number(rating) || 4.0 })
       showToast(`${form.name} updated`)
     } else {
-      const cp = { ...form, id: Date.now(), deals: 0, commission: 0, rating: 4.0, joined: new Date().toISOString().slice(0, 10) }
-      setCps(prev => [cp, ...prev])
-      showToast(`${cp.name} onboarded successfully`)
+      await addCp({ ...rest, deals: 0, commission: 0, rating: 4.0, joined: new Date().toISOString().slice(0, 10) })
+      showToast(`${form.name} onboarded successfully`)
     }
     setModal(null)
   }
 
-  const deleteCP = () => { setCps(prev => prev.filter(c => c.id !== editTarget.id)); showToast(`${editTarget.name} removed`, 'info'); setModal(null) }
+  const deleteCP = async () => { await removeCp(editTarget.id); showToast(`${editTarget.name} removed`, 'info'); setModal(null) }
 
-  const saveLead = () => {
+  const saveLead = async () => {
     if (!form.cp || !form.buyer) { showToast('CP and buyer are required', 'warning'); return }
+    // map UI `date` → DB `lead_date`; strip id/created_at
+    // eslint-disable-next-line no-unused-vars
+    const { id, created_at, date, value, ...rest } = form
+    const payload = { ...rest, value: Number(value) || 0, lead_date: date || new Date().toISOString().slice(0, 10) }
     if (editTarget) {
-      setLeads(prev => prev.map(l => l.id === editTarget ? { ...form, id: editTarget, value: Number(form.value) || 0 } : l))
+      await updateLead(editTarget, payload)
       showToast('Lead updated')
     } else {
-      const l = { ...form, id: Date.now(), value: Number(form.value) || 0 }
-      setLeads(prev => [l, ...prev])
-      showToast(`Lead for ${l.buyer} added`)
+      await addLead(payload)
+      showToast(`Lead for ${form.buyer} added`)
     }
     setModal(null)
   }
 
-  const deleteLead = () => { setLeads(prev => prev.filter(l => l.id !== editTarget.id)); showToast('Lead removed', 'info'); setModal(null) }
+  const deleteLead = async () => { await removeLead(editTarget.id); showToast('Lead removed', 'info'); setModal(null) }
 
   const toggleActive = (id) => {
-    setCps(prev => prev.map(c => c.id === id ? { ...c, active: !c.active } : c))
     const cp = cps.find(c => c.id === id)
+    updateCp(id, { active: !cp?.active })
     showToast(`${cp?.name} ${cp?.active ? 'deactivated' : 'activated'}`, cp?.active ? 'info' : 'success')
   }
 
@@ -94,7 +99,7 @@ export default function ChannelPartners() {
   const totalDeals = cps.reduce((s, c) => s + c.deals, 0)
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       <div className="flex items-center justify-between">
@@ -105,7 +110,7 @@ export default function ChannelPartners() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Active CPs', value: cps.filter(c => c.active).length, icon: Users, color: 'bg-blue-500' },
           { label: 'Total Deals', value: totalDeals, icon: TrendingUp, color: 'bg-green-500' },
@@ -168,7 +173,7 @@ export default function ChannelPartners() {
                 <p className="text-sm text-gray-500">Buyer: {l.buyer} · {l.project}</p>
                 <p className="text-sm text-gray-500">Value: {fmt(l.value)} · Commission: {l.comm}%</p>
               </div>
-              <div className="text-sm text-gray-400">{l.date}</div>
+              <div className="text-sm text-gray-400">{l.date || l.lead_date}</div>
               <div className="flex gap-2">
                 <button className="p-1.5 rounded hover:bg-gray-100" onClick={() => openEditLead(l)}><Edit2 className="w-4 h-4 text-gray-500" /></button>
                 <button className="p-1.5 rounded hover:bg-red-50" onClick={() => openDeleteLead(l)}><Trash2 className="w-4 h-4 text-red-400" /></button>
@@ -205,15 +210,15 @@ export default function ChannelPartners() {
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b"><h2 className="text-lg font-bold">{editTarget ? 'Edit Channel Partner' : 'Onboard Channel Partner'}</h2><button onClick={() => setModal(null)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Firm Name *</label><input className="input-field" placeholder="Rajiv Properties" value={form.name||''} onChange={e => f('name', e.target.value)} /></div>
                 <div><label className="label">Owner Name *</label><input className="input-field" placeholder="Rajiv Mehta" value={form.owner||''} onChange={e => f('owner', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Phone</label><input className="input-field" placeholder="+91 98765 43210" value={form.phone||''} onChange={e => f('phone', e.target.value)} /></div>
                 <div><label className="label">Email</label><input className="input-field" type="email" placeholder="rajiv@example.com" value={form.email||''} onChange={e => f('email', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">City</label><input className="input-field" placeholder="Gurgaon" value={form.city||''} onChange={e => f('city', e.target.value)} /></div>
                 <div><label className="label">Tier</label><select className="input-field" value={form.tier||'Silver'} onChange={e => f('tier', e.target.value)}><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
               </div>
@@ -236,15 +241,15 @@ export default function ChannelPartners() {
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b"><h2 className="text-lg font-bold">{editTarget ? 'Edit Lead' : 'Add Shared Lead'}</h2><button onClick={() => setModal(null)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Channel Partner *</label><select className="input-field" value={form.cp||''} onChange={e => f('cp', e.target.value)}><option value="">Select CP…</option>{cps.map(c => <option key={c.id}>{c.name}</option>)}</select></div>
                 <div><label className="label">Buyer Name *</label><input className="input-field" placeholder="Arjun Sharma" value={form.buyer||''} onChange={e => f('buyer', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Project</label><input className="input-field" placeholder="DLF Privana South" value={form.project||''} onChange={e => f('project', e.target.value)} /></div>
                 <div><label className="label">Deal Value (₹)</label><input className="input-field" type="number" placeholder="75000000" value={form.value||''} onChange={e => f('value', e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Stage</label><select className="input-field" value={form.stage||'Interested'} onChange={e => f('stage', e.target.value)}><option>Interested</option><option>Site Visit</option><option>Offer Made</option><option>Negotiation</option><option>Registered</option></select></div>
                 <div><label className="label">Commission %</label><input className="input-field" type="number" step="0.25" value={form.comm||2} onChange={e => f('comm', e.target.value)} /></div>
               </div>

@@ -17,6 +17,9 @@ import {
   HelpCircle,
   Building2,
   Network,
+  Shield,
+  Key,
+  X,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -33,10 +36,12 @@ const navSections = [
     ],
   },
   {
-    label: 'Builder OS',
+    label: 'Operations & Management',
     items: [
       { path: '/builder-erp', label: 'Builder ERP', icon: Building2 },
       { path: '/channel-partners', label: 'Channel Partners', icon: Network },
+      { path: '/society-os', label: 'Society OS', icon: Shield },
+      { path: '/property-management', label: 'Property Mgmt', icon: Key },
     ],
   },
   {
@@ -51,23 +56,36 @@ const navSections = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose = () => {} }) {
   const { logout, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar text-white flex flex-col transition-all duration-300 ease-in-out h-screen sticky top-0`}>
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-white flex flex-col h-screen
+        transform transition-transform duration-300 ease-in-out
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        lg:static lg:translate-x-0 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}
+    >
       {/* Logo */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+        <div className={`flex items-center gap-3 ${collapsed ? 'lg:justify-center' : ''}`}>
           <Home className="w-8 h-8 text-primary-400" />
           {!collapsed && <span className="text-lg font-bold tracking-wide">PropertyInsta</span>}
         </div>
+        {/* Collapse toggle — desktop only */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-sidebar-hover transition-colors"
+          className="hidden lg:block p-1 rounded-md hover:bg-sidebar-hover transition-colors"
         >
           {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+        </button>
+        {/* Close — mobile only */}
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1 rounded-md hover:bg-sidebar-hover transition-colors"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -85,15 +103,16 @@ export default function Sidebar() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/'}
+                onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
                     isActive
                       ? 'bg-primary-600 text-white'
                       : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
-                  } ${collapsed ? 'justify-center' : ''}`
+                  } ${collapsed ? 'lg:justify-center' : ''}`
                 }
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && <span className="font-medium">{item.label}</span>}
               </NavLink>
             ))}
